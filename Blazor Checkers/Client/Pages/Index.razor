@@ -1,0 +1,192 @@
+﻿@page "/"
+@using Checkers.Client.Data
+<h1>Welcome!</h1>
+
+<p>Below is a game of checkers where you can practice against yourself or play with a friend.</p>
+
+@code {
+    List<Checker> whiteCheckers = new List<Checker>();
+    List<Checker> blackCheckers = new List<Checker>();
+
+    protected override void OnInitialized()
+    {
+
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = (i + 1) % 2; j < 8; j += 2) //ensures the checkers are placed on the same color squares
+            {
+                if(i >= 0 && i < 3) //if top 3 rows
+                {
+                    whiteCheckers.Add(new Checker
+                    {
+                        checkerColor = "white",
+                        boardRow = i,
+                        boardColumn = j,
+                        direction = CheckerDirection.Down
+
+                    });
+                }
+
+                if (i >= 5 && i < 8) //if bottom 3 rows
+                {
+                    blackCheckers.Add(new Checker
+                    {
+                        checkerColor = "black",
+                        boardRow = i,
+                        boardColumn = j,
+                        direction = CheckerDirection.Up
+
+                    });
+                }
+            }
+        }
+    }
+
+    Checker activeChecker = null;
+    Checker jumpedChecker = null;
+    bool whiteTurn = true;
+
+    void CheckerClicked(Checker checker)
+    {
+        // if not the color's turn, then don't mark the clicked checker as active
+        if ((whiteTurn && checker.checkerColor == "black") ||
+            (!whiteTurn && checker.checkerColor == "white"))
+            return;
+
+        activeChecker = checker;
+        CheckValidMoves();
+    }
+
+    List<(int row, int col)> validCells = new List<(int,int)>();
+
+    void CheckValidMoves()
+    {
+        validCells.Clear();
+
+        if (activeChecker != null)
+        {
+            List<int> validRows = new List<int>();
+
+            if (activeChecker.direction == CheckerDirection.Down ||
+                    activeChecker.direction == CheckerDirection.Both)
+            {
+                validRows.Add(activeChecker.boardRow + 1);
+            }
+            if (activeChecker.direction == CheckerDirection.Up ||
+                    activeChecker.direction == CheckerDirection.Both)
+            {
+                validRows.Add(activeChecker.boardRow - 1);
+            }
+
+            foreach (var row in validRows)
+            {
+                // Adding columns on each side of current column to account for diagonal movement
+                EvaluateSpot(row, activeChecker.boardColumn + 1);
+                EvaluateSpot(row, activeChecker.boardColumn - 1);
+            }
+        }
+    }
+
+    void MoveChecker(int row, int col)
+    {
+        // Checks if a cell is a space where a checker can move
+        bool canMoveHere = validCells.Contains((row, col));
+
+        if (!canMoveHere)
+            return;
+
+        //if current checker jumped a checker, remove that checker from the board
+        if ((jumpedChecker != null) && (activeChecker.boardColumn - col) % 2 == 0)
+        {
+            if (whiteTurn)
+                blackCheckers.Remove(jumpedChecker);
+            else
+                whiteCheckers.Remove(jumpedChecker);
+
+        }
+
+        // Move the checker
+        activeChecker.boardRow = row;
+        activeChecker.boardColumn = col;
+
+        //if the checker reaches the opposite end, then allow movement both directions
+        if ((activeChecker.boardRow == 0 && activeChecker.checkerColor == "black") ||
+                (activeChecker.boardRow == 7 && activeChecker.checkerColor == "white"))
+        {
+            activeChecker.direction = CheckerDirection.Both;
+        }
+
+
+        jumpedChecker = null;
+
+        // Deselect the checker
+        activeChecker = null;
+
+        //Mark other color's turn
+        whiteTurn = !whiteTurn;
+
+        CheckValidMoves();
+    }
+
+    void EvaluateSpot(int row, int col, bool firstTime = true)
+    {
+        var whiteChecker = whiteCheckers.FirstOrDefault(n => n.boardRow == row && n.boardColumn == col);
+        var blackChecker = blackCheckers.FirstOrDefault(n => n.boardRow == row && n.boardColumn == col);
+
+        if (blackChecker == null && whiteChecker == null)
+        {
+            validCells.Add((row, col));
+        }
+        else if(firstTime)
+        {
+            //if the active checker can jump the checker
+            if ((whiteTurn && blackChecker != null) ||
+                (!whiteTurn && whiteChecker != null))
+            {
+                if (whiteTurn)
+                    jumpedChecker = blackChecker;
+                else
+                    jumpedChecker = whiteChecker;
+
+                EvaluateSpot(row + (row - activeChecker.boardRow), col + (col - activeChecker.boardColumn), false);
+            }
+        }
+
+    }
+}
+
+@for (int i = 0; i < 8; i++) // create 8 rows
+{
+    int localI = i;
+
+    <div class="row">
+
+        @for (int j = 0; j < 8; j++) // create 8 columns
+        {
+            int localJ = j;
+
+            var checker = whiteCheckers.FirstOrDefault(n => n.boardRow == i && n.boardColumn == j);
+
+            if (checker == null) // if whiteChecker list empty, grab from blackChecker list
+            {
+                checker = blackCheckers.FirstOrDefault(n => n.boardRow == i && n.boardColumn == j);
+            }
+
+            // Checks if a cell is a space where a checker can move
+            bool canMoveHere = validCells.Contains((i, j));
+
+            <div @onclick="() => MoveChecker(localI, localJ)" class="cell @(canMoveHere ? "active" : "")">
+
+                @if (checker != null)
+                {
+                    <div @onclick="() => CheckerClicked(checker)"
+                         class="checker @checker.checkerColor @(checker == activeChecker ? "active" : "")">
+                        <span>@(checker.direction == CheckerDirection.Both ? "K" : "")</span>
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+}

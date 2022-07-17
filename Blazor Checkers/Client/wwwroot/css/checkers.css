@@ -1,0 +1,59 @@
+﻿.cell {
+    height: 80px;
+    width: 80px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+.cell.active {
+    border: 2px solid black;
+    padding: 9px;
+}
+
+/* Odd row, odd cells */
+.row:nth-child(2n+1) .cell:nth-child(2n+1) {
+    background: lightgrey;
+}
+
+/* Odd row, even cells */
+.row:nth-child(2n+1) .cell:nth-child(2n) {
+    background: darkgrey;
+}
+
+/* Even row, odd cells */
+.row:nth-child(2n) .cell:nth-child(2n+1) {
+    background: darkgrey;
+}
+
+/* Even row, even cells */
+.row:nth-child(2n) .cell:nth-child(2n) {
+    background: lightgrey;
+}
+
+.checker {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 1px solid black;
+}
+
+.checker.white {
+    background: white;
+}
+
+.checker.black {
+    background: black;
+    color: white;
+}
+
+.checker.active{
+    border: 3px solid yellow;
+}
+
+.checker span{
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    display: block;
+    margin-top: 11px;
+}
