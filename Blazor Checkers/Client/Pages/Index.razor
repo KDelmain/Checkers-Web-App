@@ -43,7 +43,6 @@
     }
 
     Checker activeChecker = null;
-    Checker jumpedChecker = null;
     bool whiteTurn = true;
 
     void CheckerClicked(Checker checker)
@@ -96,12 +95,23 @@
             return;
 
         //if current checker jumped a checker, remove that checker from the board
-        if ((jumpedChecker != null) && (activeChecker.boardColumn - col) % 2 == 0)
+        if ((activeChecker.boardColumn - col) % 2 == 0)
         {
+            var averageRow = (activeChecker.boardRow + row) / 2;
+            var averageCol = (activeChecker.boardColumn + col) / 2;
+
             if (whiteTurn)
-                blackCheckers.Remove(jumpedChecker);
+            {
+                //remove black checker in jumpable checkers that has an average of the active column and column jumping to
+                var checker = blackCheckers.FirstOrDefault(n => n.boardRow == averageRow && n.boardColumn == averageCol);
+                blackCheckers.Remove(checker);
+            }
             else
-                whiteCheckers.Remove(jumpedChecker);
+            {
+                //remove white checker in jumpable checkers that has an average of the active row/column and row/column jumping to
+                var checker = whiteCheckers.FirstOrDefault(n => n.boardRow == averageRow && n.boardColumn == averageCol);
+                whiteCheckers.Remove(checker);
+            }
 
         }
 
@@ -115,9 +125,6 @@
         {
             activeChecker.direction = CheckerDirection.Both;
         }
-
-
-        jumpedChecker = null;
 
         // Deselect the checker
         activeChecker = null;
@@ -143,11 +150,6 @@
             if ((whiteTurn && blackChecker != null) ||
                 (!whiteTurn && whiteChecker != null))
             {
-                if (whiteTurn)
-                    jumpedChecker = blackChecker;
-                else
-                    jumpedChecker = whiteChecker;
-
                 EvaluateSpot(row + (row - activeChecker.boardRow), col + (col - activeChecker.boardColumn), false);
             }
         }
